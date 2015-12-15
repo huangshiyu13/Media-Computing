@@ -12,25 +12,10 @@ const int DY[] = {-1, 0, 1};
 CvScalar cv2D[1200][900];
 
 
-DynamicP::DynamicP(IplImage *_image, CvSize size) {
-	image = _image;
-	width = size.width;
-	height = size.height;
-}
-
-DynamicP::~DynamicP() {
-	for (int x = 0; x < width; ++x) {
-		delete[] f[x];
-		delete[] pre[x];
-	}
-	delete[] f;
-	delete[] pre;
-}
-
 void DynamicP::resizeWidth(int newWidth) {
 
-	//	preprocess
-	int maxWidth = max(width, newWidth);
+	maxWidth = max(width, newWidth);
+	
 	f = new double*[maxWidth];
 	pre = new int*[maxWidth];
 	ban = new bool**[maxWidth];
@@ -103,7 +88,7 @@ void DynamicP::resizeWidth(int newWidth) {
 }
 
 void DynamicP::resizeHeight(int newHeight) {
-	int maxHeight = max(height, newHeight);
+	maxHeight = max(height, newHeight);
 	f = new double*[width];
 	pre = new int*[width];
 	ban = new bool**[width];

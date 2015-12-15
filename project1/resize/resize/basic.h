@@ -13,5 +13,4 @@ CvScalar operator * (const CvScalar, const double);
 double dist(CvPoint, CvPoint);
 double dist(CvScalar, CvScalar);
 
-
 #endif
