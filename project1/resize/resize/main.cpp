@@ -6,18 +6,82 @@
 #include "costflow.h"
 #include "dynamicp.h"
 #include "shortestpath.h"
+#include "preProcess.h"
 
 //去除命令行窗口
-#pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
+//#pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
 
 
 #define RESIZE_DETECT_SIZE 10
 const char *winTitle = "Resize";
-IplImage *image;
+IplImage *image,*oriImg;
+FWH** fwh;
 CvSize winSize, imgSize;
 
 int resizeType = 0;
 
+
+void cutW(CutPath path , CvSize size){
+	int H = size.height;
+	int W = size.width;
+	for (int x = 0; x < W; ++x)
+		for (int y = 0; y < H; ++y){
+			//cout << x << " " << y << endl;
+			myCV2D[x][y] = cvGet2D(image, y, x);
+		}
+
+	for (int y = H - 1; y >= 0; --y) {
+		for (int x = path[y].width; x < W - 1; ++x) {
+			cvSet2D(image, y, x, myCV2D[x + 1][y]);
+		}
+	}
+}
+
+void cutH(CutPath path , CvSize size){
+	int H = size.height;
+	int W = size.width;
+	for (int x = 0; x < W; ++x)
+		for (int y = 0; y < H; ++y){
+			//cout << x << " " << y << endl;
+			myCV2D[x][y] = cvGet2D(image, y, x);
+		}
+
+	for (int x = W - 1; x >= 0; --x) {
+		for (int y = path[x].height; y < H - 1; ++y) {
+			cvSet2D(image, y, x, myCV2D[x ][y+1]);
+		}
+	}
+}
+
+
+void getImage(CvSize size){
+	cout << size.width << " " << size.height << endl;
+	if (size.height == winSize.height && size.width == winSize.width){
+		
+		image = cvCloneImage(oriImg);
+	
+		return;
+	}
+	int W = fwh[size.height][size.width].WPre;
+	int H = fwh[size.height][size.width].HPre;
+	getImage(cvSize(H,W));
+	cout <<"out "<< size.width << " " << size.height << endl;
+	switch(fwh[size.height][size.width].type){
+	case ReduceW:
+		cutW(fwh[size.height][size.width].cutPath , cvSize(W,H));
+		break;
+	case ReduceH:
+		cutH(fwh[size.height][size.width].cutPath , cvSize(W,H));
+		break;
+	case IncreaseW:
+		break;
+	case IncreaseH:
+		break;
+
+	}
+
+
+}
 
 //打开一张图片
 char* openFile() {
@@ -37,23 +101,29 @@ char* openFile() {
 }
 
 void createWindow(const char *filename) {
-	cvNamedWindow(winTitle);
-
 	IplImage *imageLoad = cvLoadImage(filename);
+	winSize.width = (imgSize.width = imageLoad->width);
+	winSize.height = (imgSize.height = imageLoad->height);
 
-	winSize.width = (imgSize.width = imageLoad->width) * 1.5;
-	winSize.height = (imgSize.height = imageLoad->height) * 1.5;
-
-	image = cvCreateImage(winSize, IPL_DEPTH_8U, 3);
+	image = cvCreateImage(imgSize, IPL_DEPTH_8U, 3);
 	cvSet(image, CV_RGB(1, 36, 86));
 
 	for (int x = 0; x < imageLoad->width; ++x)
 		for (int y = 0; y < imageLoad->height; ++y)
 			cvSet2D(image, y, x, cvGet2D(imageLoad, y, x));
 
+	CvSize minSize = cvSize(int(imgSize.width*0.5),int(imgSize.height*0.5));
+	fwh = new FWH*[imgSize.height+1];
+	for (int i = 0 ; i < imgSize.height+1; i++){
+		fwh[i] = new FWH[imgSize.width+1];
+	}
+	IplImage* copyImg = cvCloneImage(image);
+	oriImg = cvCloneImage(image);
+	preProcess(fwh, copyImg , imgSize , minSize, imgSize);
+
+	cvNamedWindow(winTitle);
 	cvReleaseImage(&imageLoad);
 	cvShowImage(winTitle, image);
-
 }
 void createWindow(const char *filename, int sp) {
 	cvNamedWindow(winTitle);
@@ -80,23 +150,25 @@ void onMouse(int Event, int x, int y, int flags, void *param ) {
 	//	resize width or height if left up 
 	if (Event == CV_EVENT_LBUTTONUP && resizeType != 0) {
 		//CostFlow *method = new CostFlow(image, imgSize);
-		DynamicP *method = new DynamicP(image, imgSize);
+		//DynamicP *method = new DynamicP(image, imgSize);
 
 		if (resizeType == 1) {
-			method->resizeWidth(x);
+			//method->resizeWidth(x);
 			imgSize.width = x;
+			cout <<"change width:"<< imgSize.height << " "<<imgSize.width<<endl;
+			//cvShowImage(winTitle, image);
+			getImage(imgSize);
 			cvShowImage(winTitle, image);
-			::MessageBoxA(NULL, "完成", "提示", 0x00000040);
 		}
 
 		//	resize height
 		if (resizeType == 2) {
-			printf("Begin resizing Y..\n");
-			method->resizeHeight(y);
-			printf("Complete!\n\n");
+			//method->resizeHeight(y);
 			imgSize.height = y;
+			cout <<"change height:"<< imgSize.height << " "<<imgSize.width<<endl;
+			//cvShowImage(winTitle, image);
+			getImage(imgSize);
 			cvShowImage(winTitle, image);
-			::MessageBoxA(NULL, "完成", "提示", 0x00000040);
 		}
 
 		resizeType = 0;
@@ -105,10 +177,12 @@ void onMouse(int Event, int x, int y, int flags, void *param ) {
 
 int main() {
 	if (::MessageBoxA(NULL, "请选择一张图片", "提醒", 0x00000001L) == 1){
+		
 		char *fileName;
 		if ( (fileName = openFile()) == NULL) return 0;
-
+		
 		createWindow(fileName);
+		
 		cvSetMouseCallback(winTitle, onMouse);
 		while((cvWaitKey(10)&0xff) != 27);//ESC
 		destroyWindow();

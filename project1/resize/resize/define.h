@@ -6,6 +6,8 @@
 
 using namespace std;
 
-typedef vector<int> CutPath;
+typedef vector<CvSize> CutPath;
+
+enum changeType{ReduceW,ReduceH, IncreaseW, IncreaseH};
 
 #endif
