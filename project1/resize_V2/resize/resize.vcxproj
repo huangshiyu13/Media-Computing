@@ -112,20 +112,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="basic.cpp" />
-    <ClCompile Include="dynamicp.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="costflow.cpp" />
-    <ClCompile Include="shortestpath.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="basic.h" />
-    <ClInclude Include="costflow.h" />
     <ClInclude Include="define.h" />
-    <ClInclude Include="dynamicp.h" />
     <ClInclude Include="FWH.h" />
     <ClInclude Include="preProcess.h" />
-    <ClInclude Include="shortestpath.h" />
+    <ClInclude Include="preProcessStrong.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

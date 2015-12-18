@@ -3,9 +3,6 @@
 #include <windows.h>
 #include "FWH.h"
 #include "basic.h"
-#include "costflow.h"
-#include "dynamicp.h"
-#include "shortestpath.h"
 #include "preProcess.h"
 
 //È¥³ýÃüÁîÐÐ´°¿Ú
@@ -16,68 +13,71 @@
 const char *winTitle = "Resize";
 IplImage *image,*oriImg;
 FWH** fwh;
-CvSize winSize, imgSize;
+CvSize winSize, imgSize,oriSize,minSize;
 
 int resizeType = 0;
 
 
 void cutW(CutPath path , CvSize size){
+	//cout << "inW1"<<endl;
 	int H = size.height;
 	int W = size.width;
-	for (int x = 0; x < W; ++x)
-		for (int y = 0; y < H; ++y){
-			//cout << x << " " << y << endl;
-			myCV2D[x][y] = cvGet2D(image, y, x);
-		}
-
+	//cout << "inW2"<<endl;
+	//cout << "inW3"<<endl;
 	for (int y = H - 1; y >= 0; --y) {
-		for (int x = path[y].width; x < W - 1; ++x) {
-			cvSet2D(image, y, x, myCV2D[x + 1][y]);
+		//cout << y << endl;
+		for (int x = path[H-1-y]; x < W - 1; ++x) {
+			cvSet2D(image, y, x, cvGet2D(image,y,x+1));
 		}
+		cvSet2D(image, y, W-1, CV_RGB(222, 222, 222));
 	}
+	//cout << "inW4"<<endl;
 }
 
 void cutH(CutPath path , CvSize size){
+	//cout << "inH1"<<endl;
 	int H = size.height;
 	int W = size.width;
-	for (int x = 0; x < W; ++x)
-		for (int y = 0; y < H; ++y){
-			//cout << x << " " << y << endl;
-			myCV2D[x][y] = cvGet2D(image, y, x);
-		}
-
+	//cout << "inH2"<<endl;
+	
+	//cout << "inH3"<<endl;
 	for (int x = W - 1; x >= 0; --x) {
-		for (int y = path[x].height; y < H - 1; ++y) {
-			cvSet2D(image, y, x, myCV2D[x ][y+1]);
+		//cout << x << " "<<path.size() << endl;
+		for (int y = path[W-1-x]; y < H - 1; ++y) {
+			//cout << x << " " << y <<endl;
+			cvSet2D(image, y, x, cvGet2D(image,y+1,x));
 		}
+		
+		cvSet2D(image, H-1, x, CV_RGB(222, 222, 222));
+		
 	}
+	//cout << "inH4"<<endl;
 }
 
-
 void getImage(CvSize size){
-	cout << size.width << " " << size.height << endl;
-	if (size.height == winSize.height && size.width == winSize.width){
-		
+	//cout << size.height << " " << size.width << endl;
+	if (size.height == oriSize.height && size.width == oriSize.width){
 		image = cvCloneImage(oriImg);
-	
 		return;
 	}
+
 	int W = fwh[size.height][size.width].WPre;
 	int H = fwh[size.height][size.width].HPre;
-	getImage(cvSize(H,W));
-	cout <<"out "<< size.width << " " << size.height << endl;
+	getImage(cvSize(W,H));
+	//cout <<"out "<< size.height << " " << size.width << endl;
 	switch(fwh[size.height][size.width].type){
 	case ReduceW:
+		//cout << "W" << endl;
 		cutW(fwh[size.height][size.width].cutPath , cvSize(W,H));
 		break;
 	case ReduceH:
+		//cout << "H" << endl;
 		cutH(fwh[size.height][size.width].cutPath , cvSize(W,H));
 		break;
 	case IncreaseW:
 		break;
 	case IncreaseH:
 		break;
-
 	}
 
 
@@ -102,24 +102,25 @@ char* openFile() {
 
 void createWindow(const char *filename) {
 	IplImage *imageLoad = cvLoadImage(filename);
-	winSize.width = (imgSize.width = imageLoad->width);
-	winSize.height = (imgSize.height = imageLoad->height);
-
-	image = cvCreateImage(imgSize, IPL_DEPTH_8U, 3);
-	cvSet(image, CV_RGB(1, 36, 86));
+	winSize.width = (imgSize.width = imageLoad->width)*2;
+	winSize.height = (imgSize.height = imageLoad->height)*2;
+	oriSize.width = imgSize.width;
+	oriSize.height = imgSize.height;
+	image = cvCreateImage(winSize, IPL_DEPTH_8U, 3);
+	cvSet(image, CV_RGB(222, 222, 222));
 
 	for (int x = 0; x < imageLoad->width; ++x)
 		for (int y = 0; y < imageLoad->height; ++y)
 			cvSet2D(image, y, x, cvGet2D(imageLoad, y, x));
 
-	CvSize minSize = cvSize(int(imgSize.width*0.5),int(imgSize.height*0.5));
+	minSize = cvSize(int(imgSize.width*0.8),int(imgSize.height*0.8));
 	fwh = new FWH*[imgSize.height+1];
 	for (int i = 0 ; i < imgSize.height+1; i++){
 		fwh[i] = new FWH[imgSize.width+1];
 	}
 	IplImage* copyImg = cvCloneImage(image);
 	oriImg = cvCloneImage(image);
-	preProcess(fwh, copyImg , imgSize , minSize, imgSize);
+	preProcess(fwh, copyImg , imgSize , minSize, winSize);
 
 	cvNamedWindow(winTitle);
 	cvReleaseImage(&imageLoad);
@@ -145,32 +146,44 @@ void onMouse(int Event, int x, int y, int flags, void *param ) {
 		if (abs(y - imgSize.height) < RESIZE_DETECT_SIZE) {
 			resizeType = 2;
 		}
+		if (abs(x - imgSize.width) < RESIZE_DETECT_SIZE && abs(y - imgSize.height) < RESIZE_DETECT_SIZE){
+			resizeType = 3;
+		}
 	}
-
-	//	resize width or height if left up 
-	if (Event == CV_EVENT_LBUTTONUP && resizeType != 0) {
-		//CostFlow *method = new CostFlow(image, imgSize);
-		//DynamicP *method = new DynamicP(image, imgSize);
-
+	if (Event == CV_EVENT_MOUSEMOVE && resizeType != 0){
 		if (resizeType == 1) {
 			//method->resizeWidth(x);
-			imgSize.width = x;
-			cout <<"change width:"<< imgSize.height << " "<<imgSize.width<<endl;
+			imgSize.width = x>oriSize.width?oriSize.width:x;
+			imgSize.width = imgSize.width<minSize.width?minSize.width:imgSize.width;
+			//cout <<"change width:"<< imgSize.height << " "<<imgSize.width<<endl;
 			//cvShowImage(winTitle, image);
-			getImage(imgSize);
-			cvShowImage(winTitle, image);
+			
 		}
 
 		//	resize height
 		if (resizeType == 2) {
 			//method->resizeHeight(y);
-			imgSize.height = y;
-			cout <<"change height:"<< imgSize.height << " "<<imgSize.width<<endl;
+			imgSize.height = y>oriSize.height?oriSize.height:y;
+			imgSize.height = imgSize.height<minSize.height?minSize.height:imgSize.height;
+			//cout <<"change height:"<< imgSize.height << " "<<imgSize.width<<endl;
 			//cvShowImage(winTitle, image);
-			getImage(imgSize);
-			cvShowImage(winTitle, image);
+			
 		}
-
+		if (resizeType == 3){
+			//method->resizeHeight(y);
+			imgSize.width = x>oriSize.width?oriSize.width:x;
+			imgSize.width = imgSize.width<minSize.width?minSize.width:imgSize.width;
+			imgSize.height = y>oriSize.height?oriSize.height:y;
+			imgSize.height = imgSize.height<minSize.height?minSize.height:imgSize.height;
+			//cout <<"change point:"<< imgSize.height << " "<<imgSize.width<<endl;
+			//cvShowImage(winTitle, image);	
+		}
+		getImage(imgSize);
+		cvShowImage(winTitle, image);
+	}
+	//	resize width or height if left up 
+	if (Event == CV_EVENT_LBUTTONUP && resizeType != 0) {
+		cout << imgSize.height << " "<<imgSize.width<<endl;
 		resizeType = 0;
 	}
 }
