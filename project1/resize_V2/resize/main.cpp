@@ -1,12 +1,9 @@
-#include <ctime>
 #include <opencv2/opencv.hpp>
 #include <windows.h>
 #include "FWH.h"
 #include "preProcess.h"
 #include "preProcessStrong.h"
-//去除命令行窗口
-//#pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
-
+#include <ctime>
 
 #define RESIZE_DETECT_SIZE 10
 const char *winTitle = "Resize";
@@ -18,7 +15,7 @@ FWH* fwhH;
 CvSize winSize, imgSize,oriSize,minSize;
 
 int resizeType = 0;
-
+bool timeTest = false;
 
 
 void cutW(IplImage*& image , CutPath path , CvSize size){
@@ -178,9 +175,14 @@ void createWindow(const char *filename) {
 	fwhW = new FWH[imgSize.width+1];
 	IplImage* copyImg = cvCloneImage(imageLoad);
 	oriImg = cvCloneImage(imageLoad);
-	int op;
+	int op,op2;
 	cout << "选择评价模式(1 for basic , 2 for strong):";
 	cin >> op;
+	cout << "time tets?(1 for yes , 2 for no):";
+	cin >> op2;
+	if(op2 == 1){
+		timeTest = true;
+	}
 	if (op == 1){
 		preProcessH(fwhH, copyImg , imgSize);
 		preProcessW(fwhW, copyImg , imgSize);
@@ -246,7 +248,7 @@ void onMouse(int Event, int x, int y, int flags, void *param ) {
 	}
 	//	resize width or height if left up 
 	if (Event == CV_EVENT_LBUTTONUP && resizeType != 0) {
-		cout << imgSize.height << " "<<imgSize.width<<endl;
+		cout <<"position height:"<< imgSize.height << " width:"<<imgSize.width<<endl;
 		resizeType = 0;
 	}
 }
