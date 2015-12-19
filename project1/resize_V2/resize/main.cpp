@@ -8,7 +8,7 @@
 #define RESIZE_DETECT_SIZE 10
 const char *winTitle = "Resize";
 double oriWHRadio;
-IplImage *image,*oriImg;
+IplImage *image,*oriImg,*copyImage;
 FWH* fwhW;
 FWH* fwhH;
 
@@ -206,6 +206,37 @@ void destroyWindow() {
 	cvReleaseImage(&image);
 }
 
+void showWLine(int W, int H){
+	for (int i = 0 ; i < W ; i++){
+		if (i%8 < 5){
+			cvSet2D(copyImage, H-3, i, CV_RGB(255, 255, 0));
+			cvSet2D(copyImage, H-2, i, CV_RGB(255, 255, 0));
+			cvSet2D(copyImage, H-1, i, CV_RGB(255, 255, 0));
+		}
+		
+	}
+}
+
+void showHLine(int H, int W){
+	for (int i = 0 ; i < H ; i++){
+		if (i%8 < 5){
+			cvSet2D(copyImage, i, W-3, CV_RGB(255, 255, 0));
+			cvSet2D(copyImage, i, W-2, CV_RGB(255, 255, 0));
+			cvSet2D(copyImage, i, W-1, CV_RGB(255, 255, 0));
+
+		}
+		
+	}
+}
+
+void showLine(CvSize size){
+	cvReleaseImage(&copyImage);
+	copyImage = cvCloneImage(image);
+	showWLine(size.width,size.height);
+	showHLine(size.height,size.width);
+	cvShowImage(winTitle, copyImage);
+
+}
 void onMouse(int Event, int x, int y, int flags, void *param ) {
 
 	if (Event == CV_EVENT_LBUTTONDOWN) {
@@ -244,10 +275,11 @@ void onMouse(int Event, int x, int y, int flags, void *param ) {
 			//cout <<"change point:"<< imgSize.height << " "<<imgSize.width<<endl;
 			//cvShowImage(winTitle, image);	
 		}
-		getImage(imgSize);
+		showLine(imgSize);
 	}
 	//	resize width or height if left up 
 	if (Event == CV_EVENT_LBUTTONUP && resizeType != 0) {
+		getImage(imgSize);
 		cout <<"position height:"<< imgSize.height << " width:"<<imgSize.width<<endl;
 		resizeType = 0;
 	}

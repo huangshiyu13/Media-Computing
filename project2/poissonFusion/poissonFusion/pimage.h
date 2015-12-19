@@ -3,48 +3,49 @@
 
 
 #include <string>
-#include <opencv2/opencv.hpp>
+#include "define.h"
 using namespace std;
 
-
-//	image package class
 class PImage {
 public:
-
-	//	window name
 	string winName;
-
-	//	image
 	IplImage *image;
 
-	//	width and height of image
 	int width, height;
+	CvSize size;
 
-	//	constructor and destructor
-	PImage(const char *, string);
-	~PImage();
+	PImage(const char *filename, string winName){
+		image = cvLoadImage(filename);
+		width = image->width;
+		height = image->height;
+		size = cvSize(width,height);
+		this->winName = winName;
+	}
 
-	//	show image in window
-	void show();
+	~PImage() {
+		cvDestroyWindow(winName.c_str());
+		cvReleaseImage(&image);
+	}
 
-	//	create window
-	void createWindow();
+	void show() {
+		cvShowImage(winName.c_str(), image);
+	}
 
-	//	get color of a pixel
-	CvScalar getColor(int, int);
+	void createWindow() {
+		cvNamedWindow(winName.c_str());
+		show();
+	}
 
-	//	get a color channel of RGB of a pixel
-	double getColor(int, int, int);
+	CvScalar getColor(int x, int y) {
+		return cvGet2D(image, y, x);
+	}
 
-	//	set color of a pixel
-	void setColor(int, int, CvScalar);
+	double getColor(int x, int y, int k) {
+		return getColor(x, y).val[k];
+	}
+
+	void setColor(int x, int y, CvScalar c) {
+		cvSet2D(image, y, x, c);
+	}
 };
-
-
-//	CvScalar operations
-CvScalar operator + (CvScalar , CvScalar );
-CvScalar operator - (CvScalar , CvScalar );
-CvScalar operator * (CvScalar , double );
-
-
 #endif

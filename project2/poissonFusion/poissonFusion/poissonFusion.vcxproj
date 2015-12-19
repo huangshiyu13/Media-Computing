@@ -104,10 +104,9 @@
   <ItemGroup>
     <ClCompile Include="gsi.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="mask.cpp" />
-    <ClCompile Include="pimage.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="define.h" />
     <ClInclude Include="gsi.h" />
     <ClInclude Include="mask.h" />
     <ClInclude Include="pimage.h" />

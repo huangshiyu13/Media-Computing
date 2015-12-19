@@ -1,44 +1,59 @@
 #ifndef MASK_H
 #define MASK_H
 
+#include "define.h"
 
-//	describing editing region image class
 class Mask {
 public:
-
-	//	directions and every steps
-	static int dn;
-	static int dx[4];
-	static int dy[4];
-
-	//	matrix of mask
 	bool **mask;
-
-	//	width and height of source image
-	int width, height;
-
-	//	minimum and maximum x and y coordinate in editing region
-	int minx, miny, maxx, maxy;
-	
-	//	center coordinate of editing region
-	int cx, cy;
-
-	//	pixels number in editing region
+	int cutImgW, cutImgH;
+	int minx, miny, maxx, maxy,cx, cy;
 	int size;
 
-	//	constructor and destructor
-	Mask(int , int );
-	~Mask();
+	Mask(int _cutImgW, int _cutImgH) {
+		cutImgW = _cutImgW;
+		cutImgH = _cutImgH;
+		mask = new bool*[cutImgW];
+		for (int x = 0; x < cutImgW; ++x) {
+			mask[x] = new bool[cutImgH];
+			memset(mask[x], false, cutImgH * sizeof(bool));
+		}
+	}
+	~Mask() {
+		for (int x = 0; x < cutImgW; ++x) delete[] mask[x];
+		delete[] mask;
+	}
 
-	//	get in or not in editing region of a pixel
-	bool get(int, int);
+	bool get(int x, int y) {
+		if (x < 0 || x >= cutImgW) return false;
+		if (y < 0 || y >= cutImgH) return false;
+		return mask[x][y];
+	}
 
-	//	set in or not in editing region of a pixel
-	void set(int, int, bool);
+	void set(int x, int y, bool b) {
+		if (x < 0 || x >= cutImgW) return;
+		if (y < 0 || y >= cutImgH) return;
+		mask[x][y] = b;
+	}
 
 	//	get mask information
-	void getSizeInfo();
+	void getSizeInfo() {
+		minx = miny = 1<<30;
+		maxx = maxy = -1<<30;
+		size = 0;
+		for (int x = 0; x < cutImgW; ++x){
+			for (int y = 0; y < cutImgH; ++y){
+				if (mask[x][y]) {
+					minx = min(minx, x);
+					miny = min(miny, y);
+					maxx = max(maxx, x);
+					maxy = max(maxy, y);
+					size++;
+				}
+			}
+		}
+		cx = (minx + maxx) / 2;
+		cy = (miny + maxy) / 2;
+	}
 };
-
-
 #endif
