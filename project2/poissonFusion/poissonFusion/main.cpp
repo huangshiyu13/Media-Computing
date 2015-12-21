@@ -6,24 +6,8 @@
 #include "pimage.h"
 using namespace std;
 
-//	maximum image size
-#define MAX_IMAGE_WIDTH 1200
-#define MAX_IMAGE_HEIGHT 800
-
-//	blending gradient or blending pixel
-#define BLENDING_GRADIENT
-
-//	get coordinate in bakImg using coordinate in cutImg
-#define TARX(x) (posx-msk->cx+(x))
-#define TARY(y) (posy-msk->cy+(y))
-
-//	blending coefficient
-#define SOURCE_RATIO 0.7
-
-//	get inverse of a color
-#define INVCOLOR(x) (CV_RGB(255, 255,255)-x)
-
-
+int closeRange = 10;
+bool inFirstRange = true;
 //	cutImg and bakImg image
 PImage *cutImg;
 PImage *bakImg;
@@ -199,16 +183,16 @@ void ringDrawLine(int lx, int ly, int nx, int ny) {
 	}
 }
 
-//	mouse event function of cutImg image
-void cutImgMouseEvent(int mevent, int posx, int posy, int flags, void *ustc) {
+void reDrawPath(){
+	for (int i = 0; i < ringPath.size(); ++i) {
+			int x = ringPath[i].first;
+			int y = ringPath[i].second;
+			cutImg->setColor(x, y, c[x][y]);
+		}
+}
 
-	//	exit if poisson image editing is finished
-	if (poissonImageEditinged) return;
-
-	//	cancel the ring if right button down
-	if (mevent == CV_EVENT_RBUTTONDOWN) {
-
-		//	restore the color of ring in cutImg image
+void clearPath(){
+	//	restore the color of ring in cutImg image
 		for (int i = 0; i < ringPath.size(); ++i) {
 			int x = ringPath[i].first;
 			int y = ringPath[i].second;
@@ -220,28 +204,85 @@ void cutImgMouseEvent(int mevent, int posx, int posy, int flags, void *ustc) {
 		ringLastX = ringLastY = -1;
 		ringPath.clear();
 		cutImg->show();
+}
+
+int distance2(int pointX, int pointY, int targetX, int targetY){
+	return (pointX-targetX)*(pointX-targetX) + (pointY-targetY)*(pointY-targetY);
+}
+
+bool inRange(int pointX, int pointY, int targetX, int targetY , int range){
+	return distance2(pointX,pointY,targetX,targetY) <= range*range?true:false;
+}
+
+bool isRange(int pointX, int pointY, int targetX, int targetY , int range){
+	return distance2(pointX,pointY,targetX,targetY) == range*range?true:false;
+}
+
+void drawPoint(int x, int y , int range){
+	for (int i = x-range ; i <= x+range ; i++){
+		for (int j = y-range ; j <= y+range ; j++){
+			if (abs(i-x)==range||abs(j-y) == range){
+				cutImg->setColor(i, j, CV_RGB(255,0,0));
+			}
+		}
+	}
+}
+
+void clearPoint(int x, int y , int range){
+	for (int i = x-range ; i <= x+range ; i++){
+		for (int j = y-range ; j <= y+range ;j++){
+			if (abs(i-x)==range||abs(j-y) == range){
+				cutImg->setColor(i, j,INVCOLOR(c[i][j]));
+			}
+		}
+	}
+}
+
+
+void cutImgMouseEvent(int mevent, int posx, int posy, int flags, void *ustc) {
+
+	//	exit if poisson image editing is finished
+	if (poissonImageEditinged) return;
+
+	//	cancel the ring if right button down
+	if (mevent == CV_EVENT_RBUTTONDOWN) {
+		clearPath();
 		return;
 	}
 
-	//	start the ring if left button dwon
 	if (!ringed && mevent == CV_EVENT_LBUTTONDOWN) {
 		ringStartX = posx;
 		ringStartY = posy;
+		inFirstRange = true;
 	}
 
-	//	draw lines if left button move
 	if (!ringed && flags == CV_EVENT_FLAG_LBUTTON) {
 		ringDrawLine(ringLastX, ringLastY, posx, posy);
 		ringLastX = posx;
 		ringLastY = posy;
+		
+		if (inRange(posx, posy, ringStartX, ringStartY,closeRange) && !inFirstRange){
+			drawPoint(ringStartX,ringStartY, closeRange);
+		}
+		else{
+			if (!inRange(posx, posy, ringStartX, ringStartY,3*closeRange)) inFirstRange = false;
+			clearPoint(ringStartX,ringStartY, closeRange);
+			reDrawPath();
+		}		
 		cutImg->show();
 	}
 
-	//	draw the line of start and end points if left button up
-	if (!ringed && mevent == CV_EVENT_LBUTTONUP) {
-		ringDrawLine(posx, posy, ringStartX, ringStartY);
-		ringed = true;
-		cutImg->show();
+	if (!ringed && mevent == CV_EVENT_LBUTTONUP ) {
+		clearPoint(ringStartX,ringStartY, closeRange);
+		if (inRange(posx, posy, ringStartX, ringStartY,closeRange)){
+			ringDrawLine(posx, posy, ringStartX, ringStartY);
+			reDrawPath();
+			ringed = true;
+			cutImg->show();
+		}
+		else{
+			clearPath();
+		}
 	}
 }
 
@@ -348,11 +389,13 @@ int main() {
 		char *bakImgFile = openFile();
 		if (bakImgFile == NULL) return 0;
 
-		cutImg = new PImage(cutImgFile, "Source");
-		bakImg = new PImage(bakImgFile, "Target");
+		cutImg = new PImage(cutImgFile, "cutImageWindow");
+		bakImg = new PImage(bakImgFile, "backgroundImageWindow");
 
 		msk = new Mask(cutImg->width, cutImg->height);
+
 		id = new int*[cutImg->width];
+
 		c = new CvScalar*[cutImg->width];
 		visit = new bool*[cutImg->width];
 		for (int x = 0; x < cutImg->width; ++x) {
@@ -365,6 +408,7 @@ int main() {
 			visit[x] = new bool[cutImg->height];
 			memset(visit[x], 0, cutImg->height * sizeof(bool));
 		}
+
 		visitQue = new pair<int,int>[cutImg->width * cutImg->height];
 
 		cutImg->createWindow();
@@ -373,13 +417,11 @@ int main() {
 		cvSetMouseCallback(cutImg->winName.c_str(), cutImgMouseEvent, NULL);
 		cvSetMouseCallback(bakImg->winName.c_str(), bakImgMouseEvent, NULL);
 
-		//	matrix c store the inverse color of cutImg image
 		for (int x = 0; x < cutImg->width; ++x)
 			for (int y = 0; y < cutImg->height; ++y)
 				c[x][y] = INVCOLOR(cutImg->getColor(x, y));
 
-		while((cvWaitKey(10)&0xff) != 27);//ESC
-
+		while(cvWaitKey(10) != 27);//ESC
 	}
 	return 0;
 }
