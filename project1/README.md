@@ -1,5 +1,5 @@
 # Media-Computing
-prpject of media computing class, tsinghua 
+project of media computing class, tsinghua 
 This is project1
 
 #function:
