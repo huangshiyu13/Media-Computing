@@ -1,28 +1,31 @@
-#ifndef PIMAGE_H
-#define PIMAGE_H
+#ifndef MYIMAGE_H
+#define MYIMAGE_H
 
 
 #include <string>
 #include "define.h"
 using namespace std;
 
-class PImage {
+class MyImage {
 public:
 	string winName;
+	IplImage *oriImage;
 	IplImage *image;
-
+	
 	int width, height;
 	CvSize size;
 
-	PImage(const char *filename, string winName){
+	MyImage(const char *filename, string winName){
 		image = cvLoadImage(filename);
+		oriImage = cvCloneImage(image);
 		width = image->width;
 		height = image->height;
 		size = cvSize(width,height);
 		this->winName = winName;
+		
 	}
 
-	~PImage() {
+	~MyImage() {
 		cvDestroyWindow(winName.c_str());
 		cvReleaseImage(&image);
 	}

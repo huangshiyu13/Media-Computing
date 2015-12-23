@@ -3,14 +3,14 @@
 #include <windows.h>
 #include "gsi.h"
 #include "mask.h"
-#include "pimage.h"
+#include "MyImage.h"
 using namespace std;
 
 int closeRange = 10;
 bool inFirstRange = true;
 //	cutImg and bakImg image
-PImage *cutImg;
-PImage *bakImg;
+MyImage *cutImg;
+MyImage *bakImg;
 
 //	mask of cutImg image
 Mask *msk;
@@ -48,8 +48,6 @@ int **id;
 //	color matrix
 CvScalar **c;
 
-
-//	open a file
 char* openFile() {
 	char szFileName[MAX_PATH] = {0};
 	OPENFILENAME openFileName = {0};
@@ -65,15 +63,10 @@ char* openFile() {
 	return fileName;
 }
 
-//	poisson image editing
 void poissonImageEditing(int posx, int posy) {
-
-	//	get information of mask
 	msk->getSizeInfo();
 
-	//	enumerate channels of RGB
 	for (int k = 0; k < 3; ++k) {
-
 		//	initialize Gauss-Seidel iteration method
 		GSIMethod gsim(msk->size);
 
@@ -185,25 +178,25 @@ void ringDrawLine(int lx, int ly, int nx, int ny) {
 
 void reDrawPath(){
 	for (int i = 0; i < ringPath.size(); ++i) {
-			int x = ringPath[i].first;
-			int y = ringPath[i].second;
-			cutImg->setColor(x, y, c[x][y]);
-		}
+		int x = ringPath[i].first;
+		int y = ringPath[i].second;
+		cutImg->setColor(x, y, c[x][y]);
+	}
 }
 
 void clearPath(){
 	//	restore the color of ring in cutImg image
-		for (int i = 0; i < ringPath.size(); ++i) {
-			int x = ringPath[i].first;
-			int y = ringPath[i].second;
-			cutImg->setColor(x, y, INVCOLOR(c[x][y]));
-		}
+	for (int i = 0; i < ringPath.size(); ++i) {
+		int x = ringPath[i].first;
+		int y = ringPath[i].second;
+		cutImg->setColor(x, y, INVCOLOR(c[x][y]));
+	}
 
-		//	restore variables
-		ringed = false;
-		ringLastX = ringLastY = -1;
-		ringPath.clear();
-		cutImg->show();
+	//	restore variables
+	ringed = false;
+	ringLastX = ringLastY = -1;
+	ringPath.clear();
+	cutImg->show();
 }
 
 int distance2(int pointX, int pointY, int targetX, int targetY){
@@ -260,7 +253,7 @@ void cutImgMouseEvent(int mevent, int posx, int posy, int flags, void *ustc) {
 		ringDrawLine(ringLastX, ringLastY, posx, posy);
 		ringLastX = posx;
 		ringLastY = posy;
-		
+
 		if (inRange(posx, posy, ringStartX, ringStartY,closeRange) && !inFirstRange){
 			drawPoint(ringStartX,ringStartY, closeRange);
 		}
@@ -308,13 +301,12 @@ void visitBFS(int sx, int sy) {
 	}
 }
 
-//	mouse event function of bakImg image
 void bakImgMouseEvent(int mevent, int posx, int posy, int flags, void *ustc) {
 
-	//	 start poisson image editing if ringed and left button down
+	//当生成了圆圈且按钮按下时，执行这里
 	if (ringed && mevent == CV_EVENT_LBUTTONDOWN) {
 
-		//	judge if editing region out of bakImg image
+		//判断截图区是否查出了背景图片的边界
 		int minx = 1<<30, miny = 1<<30;
 		int maxx = -1<<30, maxy = -1<<30;
 		for (int i = 0; i < ringPath.size(); ++i) {
@@ -329,17 +321,17 @@ void bakImgMouseEvent(int mevent, int posx, int posy, int flags, void *ustc) {
 		int cy = (miny + maxy) / 2;
 
 		if (posx - cx + minx <= 0 || posx - cx + maxx >= bakImg->width - 1 || posy - cy + miny <= 0 || posy - cy + maxy >= bakImg->height - 1) {
-			::MessageBoxA(NULL, "Region exceeds the boundary!", "Error", 0x00000030);
+			::MessageBoxA(NULL, "截图范围超出边界!", "Error", 0x00000030);
 			return;
 		}
 
-		//	set boundary in mask
+		//设置遮罩的边界
 		for (int i = 0; i < ringPath.size(); ++i) {
 			msk->set(ringPath[i].first, ringPath[i].second, true);
 		}
 
-		//	find every connected blocks inside and set them in mask 
-		for (int x = 0; x < cutImg->width; ++x)
+		//标记出所有在圈内的像素
+		for (int x = 0; x < cutImg->width; ++x){
 			for (int y = 0; y < cutImg->height; ++y) {
 				if (!msk->get(x, y) && !visit[x][y]) {
 					visitOut = false;
@@ -352,28 +344,29 @@ void bakImgMouseEvent(int mevent, int posx, int posy, int flags, void *ustc) {
 					}
 				}
 			}
+		}
 
-			//	restore the color of cutImg image
-			for (int i = 0; i < ringPath.size(); ++i) {
-				int x = ringPath[i].first;
-				int y = ringPath[i].second;
-				cutImg->setColor(x, y, INVCOLOR(c[x][y]));
-			}
+		//	restore the color of cutImg image
+		for (int i = 0; i < ringPath.size(); ++i) {
+			int x = ringPath[i].first;
+			int y = ringPath[i].second;
+			cutImg->setColor(x, y, INVCOLOR(c[x][y]));
+		}
 
-			//	poisson image editing
-			poissonImageEditing(posx, posy);
-			poissonImageEditinged = true;
+		//	poisson image editing
+		poissonImageEditing(posx, posy);
+		poissonImageEditinged = true;
 
-			//	modify the color of editing region in cutImg image
-			for (int x = 0; x < cutImg->width; ++x)
-				for (int y = 0; y < cutImg->height; ++y)
-					if (msk->get(x, y)) {
-						cutImg->setColor(x, y, cutImg->getColor(x, y) * 0.5 + CV_RGB(255, 255, 255) * 0.5);
-					}
+		//	modify the color of editing region in cutImg image
+		/*for (int x = 0; x < cutImg->width; ++x)
+			for (int y = 0; y < cutImg->height; ++y)
+				if (msk->get(x, y)) {
+					cutImg->setColor(x, y, cutImg->getColor(x, y) * 0.5 + CV_RGB(255, 255, 255) * 0.5);
+				}*/
 
-					cutImg->show();
-					bakImg->show();
-					::MessageBoxA(NULL, "Poisson image editing completed!", "OK", 0x00000040);
+				cutImg->show();
+				bakImg->show();
+				::MessageBoxA(NULL, "Poisson image editing completed!", "OK", 0x00000040);
 	}
 }
 
@@ -389,8 +382,8 @@ int main() {
 		char *bakImgFile = openFile();
 		if (bakImgFile == NULL) return 0;
 
-		cutImg = new PImage(cutImgFile, "cutImageWindow");
-		bakImg = new PImage(bakImgFile, "backgroundImageWindow");
+		cutImg = new MyImage(cutImgFile, "cutImageWindow");
+		bakImg = new MyImage(bakImgFile, "backgroundImageWindow");
 
 		msk = new Mask(cutImg->width, cutImg->height);
 
@@ -417,9 +410,9 @@ int main() {
 		cvSetMouseCallback(cutImg->winName.c_str(), cutImgMouseEvent, NULL);
 		cvSetMouseCallback(bakImg->winName.c_str(), bakImgMouseEvent, NULL);
 
-		for (int x = 0; x < cutImg->width; ++x)
-			for (int y = 0; y < cutImg->height; ++y)
-				c[x][y] = INVCOLOR(cutImg->getColor(x, y));
+		/*	for (int x = 0; x < cutImg->width; ++x)
+		for (int y = 0; y < cutImg->height; ++y)
+		c[x][y] = INVCOLOR(cutImg->getColor(x, y));*/
 
 		while(cvWaitKey(10) != 27);//ESC
 	}

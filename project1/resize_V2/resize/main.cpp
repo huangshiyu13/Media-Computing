@@ -97,14 +97,14 @@ double getRadio(CvSize size){
 
 IplImage* cvGetSubImage(IplImage *image, CvRect roi)
 {
-    IplImage *result;
-    // 设置 ROI 
-    cvSetImageROI(image,roi);
-    // 创建子图像
-    result = cvCreateImage( cvSize(roi.width, roi.height), image->depth, image->nChannels );
-    cvCopy(image,result);
-    cvResetImageROI(image);
-    return result;
+	IplImage *result;
+	// 设置 ROI 
+	cvSetImageROI(image,roi);
+	// 创建子图像
+	result = cvCreateImage( cvSize(roi.width, roi.height), image->depth, image->nChannels );
+	cvCopy(image,result);
+	cvResetImageROI(image);
+	return result;
 }
 
 void getImage(CvSize size){
@@ -112,7 +112,7 @@ void getImage(CvSize size){
 	IplImage* desc;
 	IplImage* getImage = cvCloneImage(oriImg);
 	IplImage* pDest;
-	 CvRect roi;
+	CvRect roi;
 	if (radioNow > oriWHRadio){
 		int changeH = oriSize.width/radioNow;
 		roi = cvRect(0,0,oriSize.width,changeH);
@@ -124,7 +124,7 @@ void getImage(CvSize size){
 		roi = cvRect(0,0,changeW,oriSize.height);
 		getImageW(changeW,getImage);
 	}
-	
+
 	//cout << "in0"<<endl;
 	pDest = cvGetSubImage(getImage,roi);
 	//cout << "in"<<endl;
@@ -213,7 +213,7 @@ void showWLine(int W, int H){
 			cvSet2D(copyImage, H-2, i, CV_RGB(255, 255, 0));
 			cvSet2D(copyImage, H-1, i, CV_RGB(255, 255, 0));
 		}
-		
+
 	}
 }
 
@@ -225,7 +225,7 @@ void showHLine(int H, int W){
 			cvSet2D(copyImage, i, W-1, CV_RGB(255, 255, 0));
 
 		}
-		
+
 	}
 }
 
@@ -238,16 +238,18 @@ void showLine(CvSize size){
 
 }
 void onMouse(int Event, int x, int y, int flags, void *param ) {
-
 	if (Event == CV_EVENT_LBUTTONDOWN) {
 		if (abs(x - imgSize.width) < RESIZE_DETECT_SIZE) {
 			resizeType = 1;
+
 		}
 		if (abs(y - imgSize.height) < RESIZE_DETECT_SIZE) {
 			resizeType = 2;
+
 		}
 		if (abs(x - imgSize.width) < RESIZE_DETECT_SIZE && abs(y - imgSize.height) < RESIZE_DETECT_SIZE){
 			resizeType = 3;
+
 		}
 	}
 	if (Event == CV_EVENT_MOUSEMOVE && resizeType != 0){
