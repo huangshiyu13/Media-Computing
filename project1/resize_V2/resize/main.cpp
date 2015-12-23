@@ -213,7 +213,6 @@ void showWLine(int W, int H){
 			cvSet2D(copyImage, H-2, i, CV_RGB(255, 255, 0));
 			cvSet2D(copyImage, H-1, i, CV_RGB(255, 255, 0));
 		}
-
 	}
 }
 
@@ -223,9 +222,7 @@ void showHLine(int H, int W){
 			cvSet2D(copyImage, i, W-3, CV_RGB(255, 255, 0));
 			cvSet2D(copyImage, i, W-2, CV_RGB(255, 255, 0));
 			cvSet2D(copyImage, i, W-1, CV_RGB(255, 255, 0));
-
 		}
-
 	}
 }
 
@@ -241,45 +238,33 @@ void onMouse(int Event, int x, int y, int flags, void *param ) {
 	if (Event == CV_EVENT_LBUTTONDOWN) {
 		if (abs(x - imgSize.width) < RESIZE_DETECT_SIZE) {
 			resizeType = 1;
-
 		}
 		if (abs(y - imgSize.height) < RESIZE_DETECT_SIZE) {
 			resizeType = 2;
-
 		}
 		if (abs(x - imgSize.width) < RESIZE_DETECT_SIZE && abs(y - imgSize.height) < RESIZE_DETECT_SIZE){
 			resizeType = 3;
-
 		}
 	}
 	if (Event == CV_EVENT_MOUSEMOVE && resizeType != 0){
 		if (resizeType == 1) {
 			imgSize.width = x>winSize.width?winSize.width:x;
 			imgSize.width = imgSize.width<1?1:imgSize.width;
-
 		}
-
-		//	resize height
 		if (resizeType == 2) {
-			//method->resizeHeight(y);
 			imgSize.height = y>winSize.height?winSize.height:y;
 			imgSize.height = imgSize.height<1?1:imgSize.height;
-			//cout <<"change height:"<< imgSize.height << " "<<imgSize.width<<endl;
-			//cvShowImage(winTitle, image);
-
 		}
 		if (resizeType == 3){
-			//method->resizeHeight(y);
 			imgSize.width = x>winSize.width?winSize.width:x;
 			imgSize.width = imgSize.width<1?1:imgSize.width;
 			imgSize.height = y>winSize.height?winSize.height:y;
 			imgSize.height = imgSize.height<1?1:imgSize.height;
-			//cout <<"change point:"<< imgSize.height << " "<<imgSize.width<<endl;
-			//cvShowImage(winTitle, image);	
+			
 		}
 		showLine(imgSize);
 	}
-	//	resize width or height if left up 
+	
 	if (Event == CV_EVENT_LBUTTONUP && resizeType != 0) {
 		getImage(imgSize);
 		cout <<"position height:"<< imgSize.height << " width:"<<imgSize.width<<endl;

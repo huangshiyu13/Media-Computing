@@ -105,10 +105,11 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BakImage.h" />
+    <ClInclude Include="CutImage.h" />
     <ClInclude Include="define.h" />
-    <ClInclude Include="gsi.h" />
-    <ClInclude Include="mask.h" />
-    <ClInclude Include="MyImage.h" />
+    <ClInclude Include="GaussSeidelSolver.h" />
+    <ClInclude Include="tool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
