@@ -107,6 +107,27 @@ public:
 	void setColor(int x, int y, CvScalar c) {
 		cvSet2D(image, y, x, c);
 	}
+
+	void init(){
+		msk = new Mask(width, height);
+
+		id = new int*[width];
+
+		c = new CvScalar*[width];
+		visit = new bool*[width];
+		for (int x = 0; x < width; ++x) {
+			id[x] = new int[height];
+			memset(id[x], 0, height * sizeof(int));
+			c[x] = new CvScalar[height];
+			for (int y = 0; y < height; ++y) {
+				c[x][y] = INVCOLOR(getColor(x, y));
+			}
+			visit[x] = new bool[height];
+			memset(visit[x], 0, height * sizeof(bool));
+		}
+
+		visitQue = new pair<int,int>[width * height];
+	}
 };
 
 CutImage *cutImage;
@@ -245,4 +266,5 @@ void cutImageMouseEvent(int mevent, int posx, int posy, int flags, void *ustc) {
 		}
 	}
 }
+
 #endif

@@ -3,6 +3,28 @@
 #include "define.h"
 #include <windows.h>
 
+void selectModel(){
+	char ans;
+	
+	cout << "是否启用裁剪优化? (y/n)"<<endl;
+	cin >> ans;
+	if (ans == 'y'){
+		cutOptimize = true;	
+	}
+	else{
+		cutOptimize = false;
+	}
+
+	cout << "是否计时? (y/n)"<<endl;
+	cin >> ans;
+	if (ans == 'y'){
+		timeTest = true;
+	}
+	else{
+		timeTest = false;
+	}
+}
+
 char* openFile() {
 	char szFileName[MAX_PATH] = {0};
 	OPENFILENAME openFileName = {0};

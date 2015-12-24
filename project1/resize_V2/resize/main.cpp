@@ -176,9 +176,9 @@ void createWindow(const char *filename) {
 	IplImage* copyImg = cvCloneImage(imageLoad);
 	oriImg = cvCloneImage(imageLoad);
 	int op,op2;
-	cout << "选择评价模式(1 for basic , 2 for strong):";
+	cout << "选择评价模式(1 for 基础模式 , 2 for 强力模式):";
 	cin >> op;
-	cout << "time tets?(1 for yes , 2 for no):";
+	cout << "是否启用计时功能?(1 for 立即启用 , 2 for 暂不启用):";
 	cin >> op2;
 	if(op2 == 1){
 		timeTest = true;
@@ -267,7 +267,7 @@ void onMouse(int Event, int x, int y, int flags, void *param ) {
 	
 	if (Event == CV_EVENT_LBUTTONUP && resizeType != 0) {
 		getImage(imgSize);
-		cout <<"position height:"<< imgSize.height << " width:"<<imgSize.width<<endl;
+		cout <<"高度:"<< imgSize.height << "px 宽度:"<<imgSize.width<<"px"<<endl;
 		resizeType = 0;
 	}
 }

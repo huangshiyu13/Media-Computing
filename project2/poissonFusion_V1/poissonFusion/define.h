@@ -3,10 +3,12 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 using namespace std;
+
 enum cutImageState{cutclean,drawing,circled,grabcuted};
 enum bakImageState{bakclean,bottondown,bottonup};
 
-
+bool cutOptimize;
+bool timeTest;
 //	if editing region is selected
 bool ringed = false;
 

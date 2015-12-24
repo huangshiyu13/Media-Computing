@@ -8,7 +8,6 @@
 
 using namespace std;
 
-
 //	pair of unknown number id and its coefficient
 typedef pair<int,double> GSIUnit;
 
@@ -120,8 +119,5 @@ public:
 		}
 	}
 };
-
-
-
 
 #endif
