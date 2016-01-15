@@ -8,7 +8,7 @@ using namespace std;
 int main() {
 
 	//对运行模式进行选择
-	selectModel();
+	//selectModel();
 
 	if (::MessageBoxA(NULL, "请选择一张被截取的图片", "提醒", 0x00000001L) == 1){
 		char *cutImageFile = openFile();
